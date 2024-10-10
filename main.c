@@ -138,35 +138,38 @@ void my_printfString(char *variable)
 
 void my_printfHexdecimal(long long int variable, bool isUppercase, bool isHasPrefix)
 {
-    const short int bitsSize = 48;
-    const short int hexadecimalBase = 4;
-    char *bits = (char *)calloc(bitsSize, sizeof(char));
+    const short int BITS_SIZE = 48;
+    const short int HEXDECIMAL_BASE = 4;
+    const short int HEXDECIMAL_LENGTH = 16;
+    const short int BIT_INDEX_INIT = BITS_SIZE / HEXDECIMAL_BASE - 1;
     bool isFirstHexadecimal = true;
-    char hexdecimalTable[16][5] = {
-        {"0000"}, // 0
-        {"1000"}, // 1
-        {"0100"}, // 2
-        {"1100"}, // 3
-        {"0010"}, // 4
-        {"1010"}, // 5
-        {"0110"}, // 6
-        {"1110"}, // 7
-        {"0001"}, // 8
-        {"1001"}, // 9
-        {"0101"}, // A
-        {"1101"}, // B
-        {"0011"}, // C
-        {"1011"}, // D
-        {"0111"}, // E
-        {"1111"}  // F
-    };
-    char hexdecimal[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+    char *bits = (char *)calloc(BITS_SIZE, sizeof(char));
+    /*
+        F = 1111
+        7 = 1110
+        B = 1101
+        3 = 1100
+        D = 1011
+        5 = 1010
+        9 = 1001
+        1 = 1000
+        E = 0111
+        6 = 0110
+        A = 0101
+        2 = 0100
+        C = 0011
+        4 = 0010
+        8 = 0001
+        0 = 0000
+    */
+    char hexdecimal[16] = {'f', '7', 'b', '3', 'd', '5', '9', '1', 'e', '6', 'a', '2', 'c', '4', '8', '0'};
 
     if (isUppercase)
     {
-        for (int i = 10; i <= 16; i++)
+        char hexdecimalUppercase[16] = {'F', '7', 'B', '3', 'D', '5', '9', '1', 'E', '6', 'A', '2', 'C', '4', '8', '0'};
+        for (int i = 0; i <= HEXDECIMAL_LENGTH; i++)
         {
-            hexdecimal[i] -= 32;
+            hexdecimal[i] = hexdecimalUppercase[i];
         }
     }
 
@@ -176,47 +179,53 @@ void my_printfHexdecimal(long long int variable, bool isUppercase, bool isHasPre
         write(1, prefix, strlen(prefix));
     }
 
-    for (int i = 0; i < bitsSize; i++)
+    for (int i = 0; i < BITS_SIZE; i++)
     {
         bits[i] = variable % 2 + '0';
         variable /= 2;
     }
 
-    for (int i = bitsSize / hexadecimalBase - 1; i >= 0; i--)
+    for (int bitsIndex = BIT_INDEX_INIT; bitsIndex >= 0; bitsIndex--)
     {
-        for (int j = 0; j < 16; j++)
+        short int low = 0;
+        short int high = HEXDECIMAL_LENGTH - 1;
+        short int bitCount = 0;
+        short int mid;
+        while (bitCount <= HEXDECIMAL_BASE)
         {
-            if (hexdecimalTable[j][0] == bits[i * hexadecimalBase])
-            {
-                for (int m = 1; m < hexadecimalBase; m++)
-                {
-                    if (hexdecimalTable[j][m] != bits[i * hexadecimalBase + m])
-                    {
-                        break;
-                    }
-                    else if (m == hexadecimalBase - 1)
-                    {
-                        if (isFirstHexadecimal && j == 0)
-                        {
-                            break;
-                        }
+            const short int BITS_HEXDECIMAL_BASE = bitsIndex * HEXDECIMAL_BASE + bitCount;
 
-                        write(1, hexdecimal + j, 1);
-                        isFirstHexadecimal = false;
-                    }
-                }
+            mid = low + (high - low) / 2;
+
+            if (bits[BITS_HEXDECIMAL_BASE] == '0')
+            {
+                low = mid + 1;
             }
+            else
+            {
+                high = mid - 1;
+            }
+
+            bitCount++;
         }
+
+        if (isFirstHexadecimal && mid == 15)
+        {
+            continue;
+        }
+
+        write(1, hexdecimal + mid, 1);
+        isFirstHexadecimal = false;
     }
     free(bits);
 }
 
-void my_printfHexdecimalUpperCase(int variable)
+void my_printfHexdecimalUppercase(int variable)
 {
     my_printfHexdecimal(variable, true, false);
 }
 
-void my_printfHexdecimalLowerCase(int variable)
+void my_printfHexdecimalLowercase(int variable)
 {
     my_printfHexdecimal(variable, false, false);
 }
@@ -250,26 +259,26 @@ void my_printfOctal(unsigned int variable)
         variable /= 2;
     }
 
-    for (int i = bitsSize / octalBase - 1; i >= 0; i--)
+    for (int bitsIndex = bitsSize / octalBase - 1; bitsIndex >= 0; bitsIndex--)
     {
-        for (int j = 0; j < 8; j++)
+        for (int tableIndexLevelOne = 0; tableIndexLevelOne < 8; tableIndexLevelOne++)
         {
-            if (octalTable[j][0] == bits[i * octalBase])
+            if (octalTable[tableIndexLevelOne][0] == bits[bitsIndex * octalBase])
             {
-                for (int m = 1; m < octalBase; m++)
+                for (int tableIndexLevelTwo = 1; tableIndexLevelTwo < octalBase; tableIndexLevelTwo++)
                 {
-                    if (octalTable[j][m] != bits[i * octalBase + m])
+                    if (octalTable[tableIndexLevelOne][tableIndexLevelTwo] != bits[bitsIndex * octalBase + tableIndexLevelTwo])
                     {
                         break;
                     }
-                    else if (m == octalBase - 1)
+                    else if (tableIndexLevelTwo == octalBase - 1)
                     {
-                        if (isFirstOctal && j == 0)
+                        if (isFirstOctal && tableIndexLevelOne == 0)
                         {
                             break;
                         }
 
-                        write(1, octal + j, 1);
+                        write(1, octal + tableIndexLevelOne, 1);
                         isFirstOctal = false;
                     }
                 }
@@ -322,11 +331,11 @@ void my_printf(char *str, ...)
                 break;
             case 'x':
                 str++;
-                my_printfHexdecimalLowerCase(va_arg(valist, int));
+                my_printfHexdecimalLowercase(va_arg(valist, int));
                 break;
             case 'X':
                 str++;
-                my_printfHexdecimalUpperCase(va_arg(valist, int));
+                my_printfHexdecimalUppercase(va_arg(valist, int));
                 break;
             case 'o':
                 str++;
@@ -352,9 +361,9 @@ void my_printf(char *str, ...)
 
 int main()
 {
-    float x = 10.4;
-    printf("float hexdecimal: %f\n", x);
-    my_printf("float hexdecimal: %f\n", x);
+    int x = 13;
+    printf("pointer: %p\n", &x);
+    my_printf("pointer: %p\n", &x);
 
     return 0;
 }
