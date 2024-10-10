@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "fcntl.h": "c",
+        "stdio.h": "c",
+        "unistd.h": "c",
+        "compare": "c",
+        "type_traits": "c"
+    }
+}
