@@ -8,15 +8,16 @@
 
 void my_printfFloat(float variable)
 {
-    float temp = variable;
     int indexFloat = 0;
-    while ((temp - (int)temp) != 0)
+    while ((variable - (int)variable) != 0)
     {
-        temp *= 10;
         indexFloat++;
+        variable *= 10;
+        printf("variable number: %d\n", (int)variable);
+        printf("variable float: %f\n", variable);
     }
 
-    unsigned int score = temp;
+    /*unsigned int score = variable;
 
     unsigned int div = 1;
     unsigned int digitCount = 1;
@@ -54,7 +55,7 @@ void my_printfFloat(float variable)
         i++;
     }
     write(1, string, strlen(string));
-    free(string);
+    free(string);*/
 }
 
 void my_printfNumber(int variable)
@@ -136,15 +137,80 @@ void my_printfString(char *variable)
     write(1, variable, strlen(variable));
 }
 
+void my_printfBaseConvert(
+    long long int variable,
+    bool isUppercase,
+    bool isHasPrefix,
+    const short int BITS_LENGTH,
+    const short int BASE_LENGTH_BLOCK,
+    const short int BASE_LENGTH,
+    char *prefix,
+    char *baseChar)
+{
+    const short int BIT_INDEX_INIT = BITS_LENGTH / BASE_LENGTH_BLOCK - 1;
+    bool isFirstBaseChar = true;
+    char *bits = (char *)calloc(BITS_LENGTH, sizeof(char));
+
+    if (isUppercase)
+    {
+        for (int i = 0; i < BASE_LENGTH; i++)
+        {
+            if (baseChar[i] >= 97 && baseChar[i] <= 122)
+            {
+                baseChar[i] -= 32;
+            }
+        }
+    }
+
+    if (isHasPrefix)
+    {
+        write(1, prefix, strlen(prefix));
+    }
+
+    for (int i = 0; i < BITS_LENGTH; i++)
+    {
+        bits[i] = variable % 2 + '0';
+        variable /= 2;
+    }
+
+    for (int bitIndexBlock = BIT_INDEX_INIT; bitIndexBlock >= 0; bitIndexBlock--)
+    {
+        short int low = 0;
+        short int high = BASE_LENGTH - 1;
+        short int mid;
+        short int bitCount = 0;
+        while (bitCount <= BASE_LENGTH_BLOCK)
+        {
+            const short int BIT_INDEX = bitIndexBlock * BASE_LENGTH_BLOCK + bitCount;
+
+            mid = low + (high - low) / 2;
+
+            if (bits[BIT_INDEX] == '0')
+            {
+                low = mid + 1;
+            }
+            else
+            {
+                high = mid - 1;
+            }
+
+            bitCount++;
+        }
+
+        if (isFirstBaseChar && mid == BASE_LENGTH - 1)
+        {
+            continue;
+        }
+
+        write(1, baseChar + mid, 1);
+        isFirstBaseChar = false;
+    }
+    free(bits);
+}
+
 void my_printfHexdecimal(long long int variable, bool isUppercase, bool isHasPrefix)
 {
-    const short int BITS_SIZE = 48;
-    const short int HEXDECIMAL_BASE = 4;
-    const short int HEXDECIMAL_LENGTH = 16;
-    const short int BIT_INDEX_INIT = BITS_SIZE / HEXDECIMAL_BASE - 1;
-    bool isFirstHexadecimal = true;
-    char *bits = (char *)calloc(BITS_SIZE, sizeof(char));
-    /*
+    /* READ IN BIG ENDIAN
         F = 1111
         7 = 1110
         B = 1101
@@ -163,61 +229,9 @@ void my_printfHexdecimal(long long int variable, bool isUppercase, bool isHasPre
         0 = 0000
     */
     char hexdecimal[16] = {'f', '7', 'b', '3', 'd', '5', '9', '1', 'e', '6', 'a', '2', 'c', '4', '8', '0'};
+    char prefix[3] = "0x";
 
-    if (isUppercase)
-    {
-        char hexdecimalUppercase[16] = {'F', '7', 'B', '3', 'D', '5', '9', '1', 'E', '6', 'A', '2', 'C', '4', '8', '0'};
-        for (int i = 0; i <= HEXDECIMAL_LENGTH; i++)
-        {
-            hexdecimal[i] = hexdecimalUppercase[i];
-        }
-    }
-
-    if (isHasPrefix)
-    {
-        char prefix[3] = "0x";
-        write(1, prefix, strlen(prefix));
-    }
-
-    for (int i = 0; i < BITS_SIZE; i++)
-    {
-        bits[i] = variable % 2 + '0';
-        variable /= 2;
-    }
-
-    for (int bitsIndex = BIT_INDEX_INIT; bitsIndex >= 0; bitsIndex--)
-    {
-        short int low = 0;
-        short int high = HEXDECIMAL_LENGTH - 1;
-        short int bitCount = 0;
-        short int mid;
-        while (bitCount <= HEXDECIMAL_BASE)
-        {
-            const short int BITS_HEXDECIMAL_BASE = bitsIndex * HEXDECIMAL_BASE + bitCount;
-
-            mid = low + (high - low) / 2;
-
-            if (bits[BITS_HEXDECIMAL_BASE] == '0')
-            {
-                low = mid + 1;
-            }
-            else
-            {
-                high = mid - 1;
-            }
-
-            bitCount++;
-        }
-
-        if (isFirstHexadecimal && mid == 15)
-        {
-            continue;
-        }
-
-        write(1, hexdecimal + mid, 1);
-        isFirstHexadecimal = false;
-    }
-    free(bits);
+    my_printfBaseConvert(variable, isUppercase, isHasPrefix, 48, 4, 16, prefix, hexdecimal);
 }
 
 void my_printfHexdecimalUppercase(int variable)
@@ -237,55 +251,20 @@ void my_printfPointer(long long int variable)
 
 void my_printfOctal(unsigned int variable)
 {
-    const short int bitsSize = sizeof(variable) * 8;
-    const short int octalBase = 3;
-    char *bits = (char *)calloc(bitsSize, sizeof(char));
-    bool isFirstOctal = true;
-    char octalTable[8][4] = {
-        {"000"}, // 0
-        {"100"}, // 1
-        {"010"}, // 2
-        {"110"}, // 3
-        {"001"}, // 4
-        {"101"}, // 5
-        {"011"}, // 6
-        {"111"}  // 7
-    };
-    char octal[8] = {'0', '1', '2', '3', '4', '5', '6', '7'};
+    /* READ IN BIG ENDIAN
+        7 = 111
+        3 = 110
+        5 = 101
+        1 = 100
+        6 = 011
+        2 = 101
+        4 = 001
+        0 = 000
+    */
+    char octal[8] = {'7', '3', '5', '1', '6', '2', '4', '0'};
+    char prefix[2] = "0";
 
-    for (int i = 0; i < bitsSize; i++)
-    {
-        bits[i] = variable % 2 + '0';
-        variable /= 2;
-    }
-
-    for (int bitsIndex = bitsSize / octalBase - 1; bitsIndex >= 0; bitsIndex--)
-    {
-        for (int tableIndexLevelOne = 0; tableIndexLevelOne < 8; tableIndexLevelOne++)
-        {
-            if (octalTable[tableIndexLevelOne][0] == bits[bitsIndex * octalBase])
-            {
-                for (int tableIndexLevelTwo = 1; tableIndexLevelTwo < octalBase; tableIndexLevelTwo++)
-                {
-                    if (octalTable[tableIndexLevelOne][tableIndexLevelTwo] != bits[bitsIndex * octalBase + tableIndexLevelTwo])
-                    {
-                        break;
-                    }
-                    else if (tableIndexLevelTwo == octalBase - 1)
-                    {
-                        if (isFirstOctal && tableIndexLevelOne == 0)
-                        {
-                            break;
-                        }
-
-                        write(1, octal + tableIndexLevelOne, 1);
-                        isFirstOctal = false;
-                    }
-                }
-            }
-        }
-    }
-    free(bits);
+    my_printfBaseConvert(variable, false, false, sizeof(variable) * 8, 3, 8, prefix, octal);
 }
 
 void my_printf(char *str, ...)
@@ -361,9 +340,9 @@ void my_printf(char *str, ...)
 
 int main()
 {
-    int x = 13;
-    printf("pointer: %p\n", &x);
-    my_printf("pointer: %p\n", &x);
+    int x = 82147128;
+    printf("hexdecimal: %X\n", x);
+    my_printf("hexdecimal: %X\n", x);
 
     return 0;
 }
