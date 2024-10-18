@@ -141,15 +141,13 @@ void my_printfBaseConvert(
     long long int variable,
     bool isUppercase,
     bool isHasPrefix,
-    const short int BITS_LENGTH,
-    const short int BASE_LENGTH_BLOCK,
     const short int BASE_LENGTH,
     char *prefix,
     char *baseChar)
 {
-    const short int BIT_INDEX_INIT = BITS_LENGTH / BASE_LENGTH_BLOCK - 1;
-    bool isFirstBaseChar = true;
-    char *bits = (char *)calloc(BITS_LENGTH, sizeof(char));
+    char *string = (char *)calloc(21, sizeof(char));
+    short int stringCount = 0;
+    short int prefixCount = 0;
 
     if (isUppercase)
     {
@@ -164,74 +162,45 @@ void my_printfBaseConvert(
 
     if (isHasPrefix)
     {
-        write(1, prefix, strlen(prefix));
-    }
-
-    for (int i = 0; i < BITS_LENGTH; i++)
-    {
-        bits[i] = variable % 2 + '0';
-        variable /= 2;
-    }
-
-    for (int bitIndexBlock = BIT_INDEX_INIT; bitIndexBlock >= 0; bitIndexBlock--)
-    {
-        short int low = 0;
-        short int high = BASE_LENGTH - 1;
-        short int mid;
-        short int bitCount = 0;
-        while (bitCount <= BASE_LENGTH_BLOCK)
+        while (*prefix)
         {
-            const short int BIT_INDEX = bitIndexBlock * BASE_LENGTH_BLOCK + bitCount;
+            *string = *prefix;
 
-            mid = low + (high - low) / 2;
-
-            if (bits[BIT_INDEX] == '0')
-            {
-                low = mid + 1;
-            }
-            else
-            {
-                high = mid - 1;
-            }
-
-            bitCount++;
+            string++;
+            prefixCount++;
+            prefix++;
         }
-
-        if (isFirstBaseChar && mid == BASE_LENGTH - 1)
-        {
-            continue;
-        }
-
-        write(1, baseChar + mid, 1);
-        isFirstBaseChar = false;
     }
-    free(bits);
+
+    while (variable)
+    {
+        *string = baseChar[variable % BASE_LENGTH];
+
+        variable /= BASE_LENGTH;
+
+        string++;
+        stringCount++;
+    };
+
+    string -= stringCount + prefixCount;
+
+    for (int i = prefixCount; i < stringCount / 2 + prefixCount; i++)
+    {
+        char swap = string[i];
+        string[i] = string[(stringCount + prefixCount - 1) - i + prefixCount];
+        string[(stringCount + prefixCount - 1) - i + prefixCount] = swap;
+    }
+
+    write(1, string, strlen(string));
+    free(string);
 }
 
 void my_printfHexdecimal(long long int variable, bool isUppercase, bool isHasPrefix)
 {
-    /* READ IN BIG ENDIAN
-        F = 1111
-        7 = 1110
-        B = 1101
-        3 = 1100
-        D = 1011
-        5 = 1010
-        9 = 1001
-        1 = 1000
-        E = 0111
-        6 = 0110
-        A = 0101
-        2 = 0100
-        C = 0011
-        4 = 0010
-        8 = 0001
-        0 = 0000
-    */
-    char hexdecimal[16] = {'f', '7', 'b', '3', 'd', '5', '9', '1', 'e', '6', 'a', '2', 'c', '4', '8', '0'};
+    char hexdecimal[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
     char prefix[3] = "0x";
 
-    my_printfBaseConvert(variable, isUppercase, isHasPrefix, 48, 4, 16, prefix, hexdecimal);
+    my_printfBaseConvert(variable, isUppercase, isHasPrefix, 16, prefix, hexdecimal);
 }
 
 void my_printfHexdecimalUppercase(int variable)
@@ -251,20 +220,10 @@ void my_printfPointer(long long int variable)
 
 void my_printfOctal(unsigned int variable)
 {
-    /* READ IN BIG ENDIAN
-        7 = 111
-        3 = 110
-        5 = 101
-        1 = 100
-        6 = 011
-        2 = 101
-        4 = 001
-        0 = 000
-    */
-    char octal[8] = {'7', '3', '5', '1', '6', '2', '4', '0'};
+    char octal[8] = {'0', '1', '2', '3', '4', '5', '6', '7'};
     char prefix[2] = "0";
 
-    my_printfBaseConvert(variable, false, false, sizeof(variable) * 8, 3, 8, prefix, octal);
+    my_printfBaseConvert(variable, false, false, 8, prefix, octal);
 }
 
 void my_printf(char *str, ...)
@@ -340,9 +299,9 @@ void my_printf(char *str, ...)
 
 int main()
 {
-    int x = 82147128;
-    printf("hexdecimal: %X\n", x);
-    my_printf("hexdecimal: %X\n", x);
+    int x = 12718712;
+    printf("convert: %o\n", x);
+    my_printf("convert: %o\n", x);
 
     return 0;
 }
